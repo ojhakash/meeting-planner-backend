@@ -588,7 +588,7 @@ let forgotPassword = async (req, res) => {
             subject: "", // Subject line
             html:
                 "<a href=" +
-                `http://localhost:4200/resetpassword/${token}/` +
+                `http://94.237.72.184/resetpassword/${token}/` +
                 ">Reset Password Link</a>"
         };
 
