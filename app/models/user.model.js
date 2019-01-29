@@ -45,6 +45,11 @@ let userSchema = new mongoose.Schema({
         unique: "mobile number already in use",
         match: [/^[\d]+$/, "{VALUE} is not a valid mobile number"]
     },
+    role: {
+        type: String,
+        required: "role number is a required field",
+        enum: ["admin", "user"]
+    },
     createdOn: {
         type: Date,
         default: ""

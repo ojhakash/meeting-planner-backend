@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 const shortid = require("shortid");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+
 const time = require("../libs/timeLib");
 const passwordLib = require("../libs/generatePasswordLib");
 const response = require("../libs/responseLib");
@@ -14,8 +17,8 @@ const UserModel = mongoose.model("User");
 
 /* Get all user Details */
 let getAllUser = (req, res) => {
-    UserModel.find()
-        .select(" -__v -_id")
+    UserModel.find({ role: "user" })
+        .select(" -__v -_id -password")
         .lean()
         .exec((err, result) => {
             if (err) {
@@ -52,7 +55,7 @@ let getAllUser = (req, res) => {
 /* Get single user details */
 let getSingleUser = (req, res) => {
     UserModel.findOne({ userId: req.user.userId })
-        .select("-password -__v -_id")
+        .select("-password -__v -_id -password")
         .lean()
         .exec((err, result) => {
             if (err) {
@@ -222,6 +225,7 @@ let signUpFunction = (req, res) => {
                             lastName: req.body.lastName || "",
                             email: req.body.email.toLowerCase(),
                             mobileNumber: req.body.mobileNumber,
+                            role: req.body.role,
                             password: passwordLib.hashpassword(
                                 req.body.password
                             ),
@@ -558,6 +562,109 @@ let logout = (req, res) => {
     });
 }; // end of the logout function.
 
+let forgotPassword = async (req, res) => {
+    try {
+        // create reusable transporter object using the default SMTP transport
+
+        let user = UserModel.findOne({ email: req.body.email });
+
+        if (!user) {
+            throw { message: "No User exsists with this email" };
+        }
+
+        const token = jwt.sign({ email: req.body.email }, "mySecret");
+
+        let transporter = nodemailer.createTransport({
+            service: "gmail", // true for 465, false for other ports
+            auth: {
+                user: "ojhaa9479@gmail.com", // generated ethereal user
+                pass: "password1234@" // generated ethereal password
+            }
+        });
+
+        const mailOptions = {
+            from: "ojhaa9479@gmail.com", // sender address
+            to: `${req.body.email}`, // list of receivers
+            subject: "", // Subject line
+            html:
+                "<a href=" +
+                `http://localhost:4200/resetpassword/${token}/` +
+                ">Reset Password Link</a>"
+        };
+
+        transporter.sendMail(mailOptions, function(err, info) {
+            if (err) {
+                throw new Error(err);
+            } else {
+                let apiResponse = response.generate(
+                    false,
+                    "Reset link is been sent to your email.Please check your email for reseting your password.",
+                    200,
+                    null
+                );
+                res.send(apiResponse);
+            }
+        });
+    } catch (error) {
+        let apiResponse = response.generate(
+            true,
+            error.message ||
+                "Error occurred in sending mail.Please try again later!",
+            400,
+            error
+        );
+        res.send(apiResponse);
+    }
+};
+
+let resetpassword = async (req, res) => {
+    try {
+        let decoded = jwt.verify(req.params.token, "mySecret");
+        let user = UserModel.findOne({ email: decoded.email });
+        if (!user) {
+            throw { message: "No User exsists with this email" };
+        }
+        UserModel.updateOne(
+            { email: decoded.email },
+            { password: passwordLib.hashpassword(req.body.password) }
+        ).exec((err, result) => {
+            if (err) {
+                let apiResponse = response.generate(
+                    true,
+                    "Failed To edit update password",
+                    500,
+                    null
+                );
+                res.send(apiResponse);
+            } else if (check.isEmpty(result)) {
+                let apiResponse = response.generate(
+                    true,
+                    "No User Found",
+                    404,
+                    null
+                );
+                res.send(apiResponse);
+            } else {
+                let apiResponse = response.generate(
+                    false,
+                    "Successfully updated your password.",
+                    200,
+                    null
+                );
+                res.send(apiResponse);
+            }
+        });
+    } catch (error) {
+        let apiResponse = response.generate(
+            true,
+            error.message ||
+                "Error occurred in reseting password.Please try again!",
+            400,
+            error
+        );
+        res.send(apiResponse);
+    }
+};
 module.exports = {
     signUpFunction: signUpFunction,
     getAllUser: getAllUser,
@@ -565,5 +672,7 @@ module.exports = {
     deleteUser: deleteUser,
     getSingleUser: getSingleUser,
     loginFunction: loginFunction,
-    logout: logout
+    logout: logout,
+    forgotPassword: forgotPassword,
+    resetpassword: resetpassword
 }; // end exports

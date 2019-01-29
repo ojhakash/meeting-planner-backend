@@ -171,6 +171,47 @@ module.exports.setRouter = app => {
 
     app.post(`${baseUrl}/logout`, auth.isAuthorized, userController.logout);
 
+    /**
+     * @apiGroup users
+     * @apiVersion  1.0.0
+     * @api {get} /api/v1/forgotpassword api for get the user details of logged-in user.
+     *
+     * @apiParam {email} email email of the user. (body params) (required)
+     *
+     * @apiSuccess {object} myResponse shows error status, message, http status code, data.
+     * 
+     * @apiSuccessExample {object} Success-Response:
+         {
+            "error": false,
+            "message": "Reset link is been sent to your email.Please check your email for reseting your password.",
+            "status": 200,
+            "data": null
+        }
+    */
+
+    app.post(`${baseUrl}/forgotpassword`, userController.forgotPassword);
+
+    /**
+     * @apiGroup users
+     * @apiVersion  1.0.0
+     * @api {get} /api/v1/resetpassword/:token api for get the user details of logged-in user.
+     *  
+     * @apiParam {token} token token of the url. (url params) (required)
+     * @apiParam {password} password password of the user. (body params) (required)
+     *
+     * @apiSuccess {object} myResponse shows error status, message, http status code, data.
+     * 
+     * @apiSuccessExample {object} Success-Response:
+         {
+            "error": false,
+            "message": "Successfully updated your password.",
+            "status": 200,
+            "data": null
+        }
+    */
+
+    app.put(`${baseUrl}/resetpassword/:token`, userController.resetpassword);
+
     //unused routes
     app.put(
         `${baseUrl}/:userId/edit`,

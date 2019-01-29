@@ -8,6 +8,8 @@ const http = require("http");
 const cors = require("cors");
 const appConfig = require("./config/appConfig");
 const logger = require("./app/libs/loggerLib");
+const { agenda } = require("./app/libs/agendaLib");
+const { setServer } = require("./app/libs/socketLib");
 const routeLoggerMiddleware = require("./app/middlewares/routeLogger.js");
 const globalErrorMiddleware = require("./app/middlewares/appErrorHandler");
 const mongoose = require("mongoose");
@@ -61,6 +63,7 @@ app.use(globalErrorMiddleware.globalNotFoundHandler);
 
 const server = http.createServer(app);
 // start listening to http server
+setServer(server);
 server.listen(appConfig.port);
 server.on("error", onError);
 server.on("listening", onListening);
@@ -142,12 +145,15 @@ mongoose.connection.on("error", function(err) {
     //process.exit(1)
 }); // end mongoose connection error
 
-mongoose.connection.on("open", function(err) {
+mongoose.connection.on("open", async function(err) {
     if (err) {
         console.log("database error");
         console.log(err);
         logger.error(err, "mongoose connection open handler", 10);
     } else {
+        const weeklyReport = agenda.create("sendAlert");
+        await agenda.start();
+        await weeklyReport.repeatEvery("10 seconds").save();
         console.log("database connection open success");
         logger.info(
             "database connection open",

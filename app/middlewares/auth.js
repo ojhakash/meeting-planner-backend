@@ -66,7 +66,10 @@ let isAuthorized = (req, res, next) => {
                                 );
                                 res.send(apiResponse);
                             } else {
-                                req.user = { userId: decoded.data.userId };
+                                req.user = {
+                                    userId: decoded.data.userId,
+                                    role: decoded.data.role
+                                };
                                 next();
                             }
                         }
