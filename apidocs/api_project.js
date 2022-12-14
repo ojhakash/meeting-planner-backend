@@ -1,5 +1,5 @@
 define({
-  "name": "homemitra-server",
+  "name": "metting-planner-server",
   "version": "1.0.0",
   "description": "",
   "sampleUrl": false,
