@@ -6,7 +6,7 @@ const moment = require("moment");
 
 const connectionOpts = {
     db: {
-        address: "mongodb://127.0.0.1:27017/meetingPlannerDb",
+        address: process.env.ME_CONFIG_MONGODB_URL,
         collection: "agendaJobs"
     }
 };
